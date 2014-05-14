@@ -37,7 +37,7 @@ function admin_menu_setup() {
     add_submenu_page( null, 'Group Master Maintenance', 'Group Master Maintenance', 'create_users', 'post-access-controller--edit', 'postaccesscontroller_edit_group' );
     add_submenu_page( null, 'Group Master Processing', 'Group Master Processing', 'create_users', 'post-access-controller--process', 'postaccesscontroller_process' );
     add_submenu_page( null, 'Group Master Processing', 'Group Master Processing', 'create_users', 'post-access-controller--archive', 'postaccesscontroller_archive' );
-    add_options_page( 'Post Access Control', 'Post Access Control', 'edit_plugins', 'post-access-controller--options', 'postaccesscontroller_options' );
+    add_options_page( 'Post Access Control', 'Post Access Control', 'edit_plugins', 'post-access-controller--options', 'postaccesscontroller_settings' );
 }
 
 function postaccesscontroller_create_posttypes() {
@@ -395,7 +395,7 @@ function postaccesscontroller_save_postdata( $post_id ) {
 
 }
 
-function postaccesscontroller_options(){
+function postaccesscontroller_settings(){
 
     require_once plugin_dir_path( __FILE__ ) . 'classes/ui.php';
 
