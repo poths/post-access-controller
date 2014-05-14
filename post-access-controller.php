@@ -28,8 +28,8 @@ add_action( 'edit_user_profile'                         , 'postaccesscontroller_
 add_action( 'personal_options_update'                   , 'postaccesscontroller_save_user_settings' );
 add_action( 'edit_user_profile_update'                  , 'postaccesscontroller_save_user_settings' );
 add_action( 'init'                                      , 'postaccesscontroller_create_posttypes' );
-add_filter( 'posts_join'                                , 'lets_modify_the_posts_join' );
-add_filter( 'posts_where'                               , 'lets_modify_the_posts_where' );
+add_filter( 'posts_join'                                , 'postaccesscontroller_posts_join' );
+add_filter( 'posts_where'                               , 'postaccesscontroller_posts_where' );
 
 
 function admin_menu_setup() {
@@ -494,7 +494,7 @@ function postaccesscontroller_admin_scripts( $hook ) {
 
 }
 
-function lets_modify_the_posts_join( $clause='' ) {
+function postaccesscontroller_posts_join( $clause='' ) {
     global $wpdb;
 
     // We join the postmeta table so we can check the value in the WHERE clause.
@@ -503,7 +503,7 @@ function lets_modify_the_posts_join( $clause='' ) {
     return $clause;
 }
 
-function lets_modify_the_posts_where( $clause = '' ) {
+function postaccesscontroller_posts_where( $clause = '' ) {
     global $wpdb;
 
     if( is_admin() && appthemes_check_user_role( 'administrator' ) ){

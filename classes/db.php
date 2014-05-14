@@ -348,7 +348,7 @@
             if( get_post_meta( $post_obj->ID, 'postaccesscontroller_ctrl_type', true ) == 'group' ){
                 if( is_user_logged_in() ):
                     foreach( get_post_meta( $post_obj->ID, 'postaccesscontroller_meta_group' ) as $grp_post_id ):
-                        $users = explode( '|', get_post($grp_post_id)->post_content );
+                        $users = get_post_meta( $grp_post_id, 'postaccesscontroller_group_user' );
                         if( in_array( get_current_user_id(), $users ) ):
                             return TRUE;
                         endif;
