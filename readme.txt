@@ -3,12 +3,12 @@ Contributors: arsdehnel
 Donate link: http://arsdehnel.net/plugin/post-access-controller/
 Tags: security, visibility, post access, access control
 Requires at least: 3.0.1
-Tested up to: 3.8.1
+Tested up to: 3.9.0
 Stable tag: "trunk"
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-This plugin allows you to control who has access to a particular post by indicating users individually or by creating access control groups that can then be assigned to posts for repeated groupings of users.  This takes the place of and enhances the "visibility" option that is part of the WP Core post maintenance screen.  
+This plugin allows you to control who has access to a particular post by indicating users individually or by creating access control groups that can then be assigned to posts for repeated groupings of users.  This takes the place of and enhances the "visibility" option that is part of the WP Core post maintenance screen.
 
 == Description ==
 
@@ -22,7 +22,7 @@ Within the *edit* form for any of your post types (see below for configuration o
 
 As mentioned above, each post can have one or many user groups that are given access to a particular post.  These groups are maintained through the "User Groups" forms that live within the "Users" menu in the WordPress admin.  You can create as many user groups as you'd like and assign users to whichever groups make sense.  There is no limit to the number of users within a group and there is no limit to the number of groups a given user can be in.  These groups can make this a great tool for websites for organizations that have committees or teams that need access to some information but that information is not public.  A user group can be setup and re-used over and over.  And then if a member leaves (or is added) it only needs to be maintained in that one group definition rather than adjusting all of your posts.
 
-These admin forms have been built with all the WordPress admin tools and structures so they feel like they are part of WP Core.  Easy to browse through, filter results and maintain all of your groups and their members.  
+These admin forms have been built with all the WordPress admin tools and structures so they feel like they are part of WP Core.  Easy to browse through, filter results and maintain all of your groups and their members.
 
 ### Configuration Options
 
@@ -54,36 +54,35 @@ The short answer: moderately secure.  For 98% of users they would have no way of
 == Screenshots ==
 
 1. First thing to do is to get to the Settings -> Post Access Controller page and make sure the configuration options are all what you would like.
-
 2. This is the listing of all the access control groups that have been setup and their maintenance options ("edit" or "archive")
-
 3. Clicking edit on the listing page will bring up the group maintenance form where you can specify who is in that group.
-
-4. Once there are groups setup then the user maintenance page also allows for maintenance of the groups that the particular user is included in.
-
-5. On the post maintenance page with the settings making the post access control box on the right side and high priority.  
-
-1. This screen shot description corresponds to screenshot-1.(png|jpg|jpeg|gif). Note that the screenshot is taken from
-the /assets directory or the directory that contains the stable readme.txt (tags or trunk). Screenshots in the /assets 
-directory take precedence. For example, `/assets/screenshot-1.png` would win over `/tags/4.3/screenshot-1.png` 
-(or jpg, jpeg, gif).
+4. Once there are groups setup then the user maintenance page also allows for maintenance of the groups that the particular user is included in.=
+5. On the post maintenance page with the settings making the post access control box on the right side and high priority.
 
 == Changelog ==
 
-= 1.0 =
+= 0.9.1 =
+* Added interim option to allow the WP Core post visibility option if enabled in the Post Access Controller settings page
+
+= 0.9.0 =
+* Major change in how data is stored, WILL BREAK existing implementations and require either re-entry of access control groups and access control user selections or a custom conversion script.  Please make support request if you would like a conversion script.
+* Bug fix to remove posts from the listing that user does not have access to
 * Created custom post type and converted from custom database tables to use the core wp_posts and related meta data
 * Cleaned up admin pages again to really feel like it operates like WP Core
 * Adjusted necessary pieces to make it work within the WP Plugin Library
 
-= 0.5 =
+= 0.5.0 =
 * Rewrote admin pages to use WP classes so the feel of the pages matched the rest of core
 
-= 0.1 =
+= 0.1.0 =
 * Initial version with custom database tables and non-WP looking admin pages
 
 == Upgrade Notice ==
 
-= 1.0 =
+= 0.9 =
+See changelog, there are some major backend changes with this version that could cause problems with existing installations of this plugin.
+
+= 0.8 =
 First version publicly accessible via WordPress.org
 
 == Future Enhancements ==
@@ -93,5 +92,6 @@ Any good plugin will almost always have things that it could do that it doesn't 
 * Create a settings page option to limit which users can maintain their own groups.  Sometimes users might be subscribers and shouldn't be able to add themselves to an admin-like group (for instance).
 * Add filter/sorting options to the listing of users on the group maintenance page for sites where there are hundreds or thousands of users the current inputs would be difficult and frustrating.
 * Add filter/sorting options to the listing of users or groups on the post maintenance page.  Even once groups are setup maybe there are lots of groups or some posts just require the setting of users individually.  The current method of sorting just by name might get majorly time-consuming on sites that have lots of users.
+* Add logic to the post maintenance page to make sure that at least one user or group has access to the post
 
 **Have an idea? Submit it using the Support menu option and I'll let you know about getting it added!**
