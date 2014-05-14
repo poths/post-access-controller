@@ -3,7 +3,7 @@
  * Plugin Name: Post Access Controller
  * Plugin URI:  http://arsdehnel.net/plugin/post-access-controller/
  * Description: Allow control of access to individual posts by setting individual users or user groups to have access
- * Version:     0.9
+ * Version:     0.9.1
  * Author:      Adam Dehnel
  * Author URI:  http://arsdehnel.net/
  * License:     GPLv2 or later
@@ -71,6 +71,7 @@ function postaccesscontroller_register_settings(){
     register_setting( 'postaccesscontroller-settings-group', 'meta_box_priority' );
     register_setting( 'postaccesscontroller-settings-group', 'post_types' );
     register_setting( 'postaccesscontroller-settings-group', 'access_denied_message' );
+    register_setting( 'postaccesscontroller-settings-group', 'enable_post_visibility' );
 }
 
 function postaccesscontroller_init(){
@@ -437,6 +438,11 @@ function postaccesscontroller_options(){
                                                                                                                                ,'core'      => 'Core'
                                                                                                                                ,'default'   => 'Default'
                                                                                                                                ,'low'       => 'Low') ) );
+
+    $post_maint['fields'][]     = $pac_ui->generate_form_table_line( 'Visibility', 'DROP_DOWN', array( 'current_value' => get_option('enable_post_visibility')
+                                                                                                      ,'name'          => 'enable_post_visibility'
+                                                                                                      ,'values'        => array('hidden'     => 'Disable'
+                                                                                                                               ,'visible'    => 'Enable') ) );
 
     //external files
     wp_enqueue_style( 'pca-styles', plugins_url().'/post-access-controller/admin-general.css' );

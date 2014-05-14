@@ -5,7 +5,9 @@
 	wp_nonce_field( 'postaccesscontroller_sec_field', 'postaccesscontroller_sec_field_nonce' );
 
 	// Display the form, using the current value.
-	echo '<table class="form-table">';
+	echo '<table class="form-table post-visibility--';
+	echo get_option('enable_post_visibility');
+	echo '">';
 	echo $ctrl_type;
 	echo '<tr>';
 	echo '<td colspan="2" class="postaccesscontroller-details" data-spinner-src="/wp-admin/images/spinner-2x.gif">';

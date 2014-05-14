@@ -61,6 +61,9 @@ The short answer: moderately secure.  For 98% of users they would have no way of
 
 == Changelog ==
 
+= 0.9.1 =
+* Added interim option to allow the WP Core post visibility option if enabled in the Post Access Controller settings page
+
 = 0.9.0 =
 * Major change in how data is stored, WILL BREAK existing implementations and require either re-entry of access control groups and access control user selections or a custom conversion script.  Please make support request if you would like a conversion script.
 * Bug fix to remove posts from the listing that user does not have access to
