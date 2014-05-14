@@ -1,14 +1,17 @@
 <?php
 
     class postaccesscontroller_db{
-    
+
         public function __construct(){
             global $wpdb;
             $this->wpdb = &$wpdb;
             global $postaccesscontroller_statuses;
             $this->statuses = &$postaccesscontroller_statuses;
         }
-        
+
+        /*
+        * Saves the post access controller "group" post type
+        */
         public function pac_group_form_process( $data ){
 
             $post_data = array(
@@ -18,22 +21,41 @@
                 'post_type'      => 'pstacsctrlr_grp'
             );
 
+            //are we adding a new post?
             if( empty( $data['post_id'] ) ):
+
+            	//this will return an object with an error if there is a problem
+            	//or the new ID if it worked
                 $return          = wp_insert_post( $post_data, true );
+
+            	//check what came back
                 if( is_object( $return ) ){
+
+                	//capture the errors
                     foreach( $return->errors as $error ):
                         if( count( $error ) > 0 ):
                             $errors .= implode('<br>',$error);
                         endif;
                     endforeach;
+
+                    //return those errors for display
                     $results = array( 'error'            => $errors
                                      );
+
+                //everything went alright
                 }else{
-                    $results = array( 'ID'               => $return
+
+                	//set this so we can just do the "save users" part with the same variable
+                	//whether we added a new post or updated an existing one
+                	$return_id = $return;
+
+                    $results = array( 'ID'               => $return_id
                                      ,'result'           => 'Group "' . $data['post_title'] . '" created successfully'
                                      ,'txn_type'         => 'INS'
                                      );
                 }
+
+            //or updating an existing one?
             else:
                 $post_data['ID'] = $data['post_id'];
                 $return_id       = wp_update_post( $post_data );
@@ -49,11 +71,24 @@
                 }
             endif;
 
+			//we want multiple records for the meta user so we delete all of them and re-write the currently indicated ones
+			delete_post_meta( $return_id, 'postaccesscontroller_group_user' );
+
+        	//now that we've saved the group we need to save each user to post meta for that ID
+        	foreach( array_values( $data['post_content'] ) as $user ):
+
+				add_post_meta( $return_id, 'postaccesscontroller_group_user', $user );
+
+			endforeach;
+
             return $results;
-        
+
         }
 
-        public function pac_group_archive_process( $data ){
+        /*
+        * Marks the "group" post as trash
+        */
+		public function pac_group_archive_process( $data ){
 
             $post_data = array(
                 'ID'             => $data['post_id'],
@@ -70,11 +105,11 @@
                                  ,'txn_type'         => 'UPD'
                                  );
             }
-            
+
             return $results;
-        
+
         }
-        
+
         public function group_master_lkup( $data ){
 
             //localize
@@ -85,7 +120,7 @@
             if( $include_users == 'Y' ):
 
                 //create and (more importantly) cache the array of current users in the group
-                $current_users          = explode( '|', $return['group_master']->post_content ); 
+                $current_users          = get_post_meta( $post_id, 'postaccesscontroller_group_user' );
 
                 //start by getting ALL users
                 $users                  = get_users();
@@ -100,9 +135,9 @@
                         $selected = 'N';
                     endif;
 
-                    $return['users'][] = array( 'value'    => $user->ID 
-                                                   ,'label'    => $user->display_name
-                                                   ,'selected' => $selected );
+                    $return['users'][] = array( 'value'    => $user->ID
+                                               ,'label'    => $user->display_name
+                                               ,'selected' => $selected );
 
                 endforeach;
 
@@ -114,11 +149,11 @@
         public function meta_options_lkup( $data ){
 
             if( $data['type'] == 'user' ):
-            
+
                 $options    = get_users();
 
             elseif( $data['type'] == 'group' ):
-            
+
                 $options    = $this->group_masters_lkup();
 
             endif;
@@ -126,7 +161,7 @@
             return $options;
 
         }
-        
+
         public function user_groups_lkup( $data ){
 
             //localize
@@ -136,7 +171,7 @@
 
             foreach( $group_masters as $group ):
 
-                if( in_array( $user_id, explode( '|', $group->post_content ) ) ):
+                if( in_array( $user_id, get_post_meta( $group->ID, 'postaccesscontroller_group_user' ) ) ):
                     $selected = 'Y';
                 else:
                     $selected = 'N';
@@ -152,9 +187,9 @@
 
         private function group_masters_lkup( $data = array() ){
 
-            $defaults = array( 
+            $defaults = array(
                            'post_type'      => 'pstacsctrlr_grp'
-                          ,'post_status'    => array_keys( $this->statuses ) 
+                          ,'post_status'    => array_keys( $this->statuses )
                           ,'orderby'        => 'title'
                           ,'posts_per_page' => -1
                           );
@@ -165,6 +200,9 @@
             return $group_masters;
         }
 
+        /*
+        * Saving the post access controller data that is part of the user profile form
+        */
         public function pac_user_form_process( $data ){
 
             $user_id          = $data['user_id'];
@@ -182,7 +220,7 @@
                     //if they are then we should check if they should STAY in that array
                     if( !in_array( $group['value'], $requested_groups ) ):
 
-                        //so the user is in a group but now they are not according to the requested group data 
+                        //so the user is in a group but now they are not according to the requested group data
                         //so remove them and then re-save that group
                         $this->pac_grp_single_user_upd( $group['value'], $user_id, 'REMOVE' );
 
@@ -207,38 +245,57 @@
 
         private function pac_grp_single_user_upd( $group_id, $user_id, $prcs_type ){
 
-            //first get the group and parse out the array
-            $group = get_post( $group_id );
-            $users = explode( '|', $group->post_content );
+            //get all the "user" meta records
+            $users = get_post_meta( $group_id, 'postaccesscontroller_group_user' );
 
+            //are we adding or removing?
             if( $prcs_type == 'ADD' ):
+
+            	//does the user already exist?
                 if( in_array( $user_id, $users ) ):
+
                     $return['rslt_code'] = 'SUCCESS';
                     $return['rslt_desc'] = 'No action needed';
+
+                //guess not so we should add them
                 else:
-                    $users[]             = $user_id;
-                    $post_data = array(
-                        'post_content'   => implode( '|', array_values( $users ) ),
-                        'ID'             => $group_id
-                    );
-                    $return_id       = wp_update_post( $post_data );
+
+                	//this shouldn't really ever return false because we're not setting the unique parm to true but never hurts to check
+                    if( add_post_meta( $group_id, 'postaccesscontroller_group_user', $user_id ) ):
+    	                $return['rslt_code'] = 'SUCCESS';
+	                    $return['rslt_desc'] = 'User added';
+                	else:
+    	                $return['rslt_code'] = 'ERROR';
+	                    $return['rslt_desc'] = 'User was not able to be added successfully';
+            		endif;
+
                 endif;
+
             elseif( $prcs_type == 'REMOVE' ):
 
-                //try to find the key for this user
+                //try to find the key for this user (ie see if they are already in the group)
                 $key = array_search($user_id, $users);
 
+            	//if they aren't then we don't need to do anything
                 if( $key === false ):
+
                     $return['rslt_code'] = 'SUCCESS';
                     $return['rslt_desc'] = 'No action needed';
+
+                //guess they are so we need to remove them
                 else:
-                    unset($users[$key]);
-                    $post_data = array(
-                        'post_content'   => implode( '|', array_values( $users ) ),
-                        'ID'             => $group_id
-                    );
-                    $return_id       = wp_update_post( $post_data );
+
+                    //just delete that user's meta record
+                    if( delete_post_meta( $group_id, 'postaccesscontroller_group_user', $user_id ) ):
+    	                $return['rslt_code'] = 'SUCCESS';
+	                    $return['rslt_desc'] = 'User removed';
+                	else:
+    	                $return['rslt_code'] = 'ERROR';
+	                    $return['rslt_desc'] = 'User was not able to be removed successfully';
+            		endif;
+
                 endif;
+
             endif;
 
         }
@@ -271,14 +328,14 @@
 
             $status_counts['all'] = count($groups);
 
-            return $status_counts;            
+            return $status_counts;
         }
 
         public function post_access_allow_check( $post_obj ){
 
             if( get_post_meta( $post_obj->ID, 'postaccesscontroller_ctrl_type', true ) == 'user' ){
                 if( is_user_logged_in() ):
-                    $users = get_post_meta( $post_obj->ID, 'postaccesscontroller_meta_user', true );
+                    $users = get_post_meta( $post_obj->ID, 'postaccesscontroller_meta_user' );
                     if( in_array( get_current_user_id(), $users ) ):
                         return TRUE;
                     else:
@@ -290,7 +347,7 @@
             }
             if( get_post_meta( $post_obj->ID, 'postaccesscontroller_ctrl_type', true ) == 'group' ){
                 if( is_user_logged_in() ):
-                    foreach( get_post_meta( $post_obj->ID, 'postaccesscontroller_meta_group', true ) as $grp_post_id ):
+                    foreach( get_post_meta( $post_obj->ID, 'postaccesscontroller_meta_group' ) as $grp_post_id ):
                         $users = explode( '|', get_post($grp_post_id)->post_content );
                         if( in_array( get_current_user_id(), $users ) ):
                             return TRUE;
@@ -306,7 +363,7 @@
         }
 
     }
-    
+
 
 /* End of file */
 /* Location: ./post-access-controller/classes/db.php */
