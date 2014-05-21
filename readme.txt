@@ -8,7 +8,7 @@ Stable tag: "trunk"
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-This plugin allows you to control who has access to a particular post by indicating users individually or by creating access control groups that can then be assigned to posts for repeated groupings of users.  This takes the place of and enhances the "visibility" option that is part of the WP Core post maintenance screen.
+Enhances the Post "Visibility" options within the edit post page to allow specific users or groups of users access to the post.
 
 == Description ==
 
