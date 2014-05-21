@@ -1,0 +1,166 @@
+.postaccesscontroller-details{
+	min-height: 100px;
+	text-align: center;
+	border: 1px solid #ccc;
+	margin-top: 4px;
+}
+#postaccesscontroller-meta-box .form-table td.postaccesscontroller-details{
+	padding: 0;
+}
+.postaccesscontroller-details img{
+	padding: 30px 0 0;
+}
+.postaccesscontroller-details header{
+	background: #444;
+	color: white;
+	padding: 2px 4px;
+	text-align: left;
+	line-height: 21px;
+}
+.postaccesscontroller-details header button{
+	float: right;
+}
+.postaccesscontroller-details header .button.button-small{
+	height: 20px;
+	line-height: 16px;
+}
+.postaccesscontroller-checkbox-well{
+	border: 1px solid #999;
+	height: 200px;
+	overflow-x: hidden;
+	overflow-y: scroll;
+
+	/* fancy backgrounds to make it look like you need to scroll */
+	background:
+		/* Shadow covers */
+		linear-gradient(white 30%, rgba(255,255,255,0)),
+		linear-gradient(rgba(255,255,255,0), white 70%) 0 100%,
+
+		/* Shadows */
+		radial-gradient(50% 0, farthest-side, rgba(0,0,0,.2), rgba(0,0,0,0)),
+		radial-gradient(50% 100%,farthest-side, rgba(0,0,0,.2), rgba(0,0,0,0)) 0 100%;
+
+	background:
+		/* Shadow covers */
+		linear-gradient(white 30%, rgba(255,255,255,0)),
+		linear-gradient(rgba(255,255,255,0), white 70%) 0 100%,
+
+		/* Shadows */
+		radial-gradient(farthest-side at 50% 0, rgba(0,0,0,.2), rgba(0,0,0,0)),
+		radial-gradient(farthest-side at 50% 100%, rgba(0,0,0,.2), rgba(0,0,0,0)) 0 100%;
+
+	background-repeat: no-repeat;
+	background-color: white;
+	background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
+
+	/* Opera doesn't support this in the shorthand */
+	background-attachment: local, local, scroll, scroll;
+}
+.postaccesscontroller-checkbox-well label{
+	display: block;
+	width: 200px;
+	float: left;
+	padding: 4px;
+	text-align: left;
+}
+#postaccesscontroller-meta-box .postaccesscontroller-checkbox-well label{
+	width: 100%;
+}
+#postaccesscontroller-meta-box .form-table td{
+	padding: 10px 0;
+}
+#postaccesscontroller-meta-box .form-table th{
+	padding: 16px 0;
+	font-size: 13px;
+}
+.postaccesscontroller-checkbox-well label:hover{
+	background: rgba( 0, 0, 0, .25 );
+}
+.postaccesscontroller-checkbox-well::after{
+	content: '';
+	display: table;
+	clear: both;
+}
+.postaccesscontroller-checkbox-well.height-standard{
+	height: 150px;
+}
+.postaccesscontroller-checkbox-well.height-tall{
+	height: 400px;
+}
+.postaccesscontroller-noacs-msg textarea{
+	width: 100%;
+}
+.form-table .input-medium{
+	width: 250px;
+}
+.form-table .input-large{
+	width: 600px;
+}
+.form-table .input-textareaheight-medium{
+	height: 150px;
+}
+.subsubsub a{
+	border-left: 1px solid #666;
+}
+.subsubsub li:first-child a{
+	border-left: none;
+}
+/* -------------------------------------
+   breadcrumbs
+   ------------------------------------- */
+.breadcrumbs{
+	background: rgba( 0, 0, 0, .1 );
+	margin: 5px 0;
+	padding: 8px;
+	border-radius: 4px;
+}
+.breadcrumbs::after{
+	content: '';
+	display: table;
+	clear: both;
+}
+.breadcrumbs ul{
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.breadcrumbs li{
+	padding: 0;
+	margin: 0;
+	display: block;
+	float: left;
+}
+.breadcrumbs li::after{
+	content: ' > ';
+	margin: 0 3px 0 0;
+}
+.breadcrumbs li:last-of-type::after{
+	content: '';
+}
+.breadcrumbs li a{
+	color: black;
+}
+
+
+/* -------------------------------------
+   utilities
+   ------------------------------------- */
+.hide{
+	display: none;
+}
+.clearfix::after{
+	content: '';
+	display: table;
+	clear: both;
+}
+.pull-left{
+	float: left;
+}
+.pull-right{
+	float: right;
+}
+
+/* this is so that on the post edit form we hide the "visibility" field since this plugin enhances that option to the point it shouldn't be used */
+#visibility{
+	display: none;
+}
