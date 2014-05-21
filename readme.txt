@@ -49,7 +49,7 @@ Installation of the Post Access Controller is pretty standard.
 
 = How secure is Post Access Controller? =
 
-The short answer: moderately secure.  For 98% of users they would have no way of getting around the checks and controls that this puts into place.  It will prevent the stumbling across a link that isn't for them (such as one forwarded in emails or that they maliciously got from someone else) and it will prevent the page from coming up in any search results. Without being a hacker and knowing the approaches that are taken to compromise a WordPress site it would be impossible to say that this covers every possible attack situation.  However, it uses the built-in WP Core actions and variables for the access checking so it is as secure as WP itself.
+The short answer: pretty darn secure but don't put your bank information out there.  For 98% of users they would have no way of getting around the checks and controls that this puts into place.  It will prevent the stumbling across a link that isn't for them (such as one forwarded in emails or that they maliciously got from someone else) and it will prevent the page from coming up in any search results. Without being a hacker and knowing the approaches that are taken to compromise a WordPress site it would be impossible to say that this covers every possible attack situation.  However, it uses the built-in WP Core actions and variables for the access checking so it is as secure as WP itself.
 
 == Screenshots ==
 
