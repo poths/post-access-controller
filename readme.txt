@@ -54,9 +54,13 @@ The short answer: pretty darn secure but don't put your bank information out the
 == Screenshots ==
 
 1. First thing to do is to get to the Settings -> Post Access Controller page and make sure the configuration options are all what you would like.
+
 2. This is the listing of all the access control groups that have been setup and their maintenance options ("edit" or "archive")
+
 3. Clicking edit on the listing page will bring up the group maintenance form where you can specify who is in that group.
+
 4. Once there are groups setup then the user maintenance page also allows for maintenance of the groups that the particular user is included in.=
+
 5. On the post maintenance page with the settings making the post access control box on the right side and high priority.
 
 == Changelog ==
