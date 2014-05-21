@@ -3,13 +3,13 @@
  * Plugin Name: Post Access Controller
  * Plugin URI:  http://arsdehnel.net/plugin/post-access-controller/
  * Description: Allow control of access to individual posts by setting individual users or user groups to have access
- * Version:     0.8
+ * Version:     0.9.2
  * Author:      Adam Dehnel
  * Author URI:  http://arsdehnel.net/
  * License:     GPLv2 or later
- * 
- * 
- * 
+ *
+ *
+ *
 */
 
 global $postaccesscontroller_statuses;
@@ -28,10 +28,13 @@ add_action( 'edit_user_profile'                         , 'postaccesscontroller_
 add_action( 'personal_options_update'                   , 'postaccesscontroller_save_user_settings' );
 add_action( 'edit_user_profile_update'                  , 'postaccesscontroller_save_user_settings' );
 add_action( 'init'                                      , 'postaccesscontroller_create_posttypes' );
+add_filter( 'posts_join'                                , 'postaccesscontroller_posts_join' );
+add_filter( 'posts_where'                               , 'postaccesscontroller_posts_where' );
+
 
 function admin_menu_setup() {
     add_users_page( 'User Group Maintenance', 'User Groups', 'create_users', 'post-access-controller--main', 'postaccesscontroller_init');
-    add_submenu_page( null, 'Group Master Maintenance', 'Group Master Maintenance', 'create_users', 'post-access-controller--edit', 'postaccesscontroller_edit' );
+    add_submenu_page( null, 'Group Master Maintenance', 'Group Master Maintenance', 'create_users', 'post-access-controller--edit', 'postaccesscontroller_edit_group' );
     add_submenu_page( null, 'Group Master Processing', 'Group Master Processing', 'create_users', 'post-access-controller--process', 'postaccesscontroller_process' );
     add_submenu_page( null, 'Group Master Processing', 'Group Master Processing', 'create_users', 'post-access-controller--archive', 'postaccesscontroller_archive' );
     add_options_page( 'Post Access Control', 'Post Access Control', 'edit_plugins', 'post-access-controller--options', 'postaccesscontroller_options' );
@@ -55,11 +58,11 @@ function postaccesscontroller_create_posttypes() {
     flush_rewrite_rules();
 }
 
-function postaccesscontroller_meta_user(){  
+function postaccesscontroller_meta_user(){
     postaccesscontroller_meta_options(array('type'=>'user'));
 }
 
-function postaccesscontroller_meta_group(){ 
+function postaccesscontroller_meta_group(){
     postaccesscontroller_meta_options(array('type'=>'group'));
 }
 
@@ -68,9 +71,10 @@ function postaccesscontroller_register_settings(){
     register_setting( 'postaccesscontroller-settings-group', 'meta_box_priority' );
     register_setting( 'postaccesscontroller-settings-group', 'post_types' );
     register_setting( 'postaccesscontroller-settings-group', 'access_denied_message' );
+    register_setting( 'postaccesscontroller-settings-group', 'enable_post_visibility' );
 }
 
-function postaccesscontroller_init(){   
+function postaccesscontroller_init(){
 
     require_once plugin_dir_path( __FILE__ ) . 'classes/db.php';
     require_once plugin_dir_path( __FILE__ ) . 'classes/list-table.php';
@@ -78,7 +82,6 @@ function postaccesscontroller_init(){
 
     $pac_db                     = new postaccesscontroller_db();
     $pac_ui                     = new postaccesscontroller_ui();
-
     $per_page                   = 10;
 
     //header
@@ -98,11 +101,11 @@ function postaccesscontroller_init(){
                                               ,'href'  => get_bloginfo('wpurl') . '/wp-admin/users.php?page=post-access-controller--main&filters=status_code~I'
                                               ,'count' => $status_counts['trash'] )
                                   );
-    
+
     //build the list table
     $pac_list_table             = new PAC_List_Table( array('top'=>$pac_ui->generate_extra_tablenav( $tablenav ) ) );
 
-    $pac_data                   = $pac_db->group_listing_data_lkup( array( 
+    $pac_data                   = $pac_db->group_listing_data_lkup( array(
                                                                            'page'      => $pac_list_table->get_pagenum()
                                                                           ,'per_page'  => $per_page
                                                                           ,'order_by'  => $_GET['orderby']
@@ -112,18 +115,18 @@ function postaccesscontroller_init(){
 
     $pac_list_table->prepare_items( array( 'table_data'  => $pac_data['display_data']
                                           ,'per_page'    => $per_page
-                                          ,'total_items' => $pac_data['total_items'] ) ); 
+                                          ,'total_items' => $pac_data['total_items'] ) );
     $pac_list_table->search_box('search', 'search_id');
 
     $data['list_table']         = $pac_list_table;
-    
-    require_once plugin_dir_path( __FILE__ ) . 'views/groups-list.php';
-    
+
+    require_once plugin_dir_path( __FILE__ ) . 'views/group_post_type/list.php';
+
     die();
 
 }
 
-function postaccesscontroller_edit(){   
+function postaccesscontroller_edit_group(){
 
     //instantiate the db class
     require_once plugin_dir_path( __FILE__ ) . 'classes/db.php';
@@ -135,16 +138,16 @@ function postaccesscontroller_edit(){
 
     //header
     $pac['header_text']         = '<h2>Post Access Controller: Edit Group</h2>';
-    
+
     //external files
-    wp_enqueue_style( 'pca-styles', plugins_url().'/post-access-controller/admin-general.css' );
-    
+    wp_enqueue_style( 'pca-styles', plugins_url().'/post-access-controller/css/admin-general.css' );
+
     if( $_GET['post_id'] ):
         $post_id = $_GET['post_id'];
     else:
         $post_id = 0;
     endif;
-    
+
     //data
     $data                       = $pac_db->group_master_lkup( array( 'post_id'  => $post_id
                                                                     ,'include_users'    => 'Y' ) );
@@ -170,20 +173,20 @@ function postaccesscontroller_edit(){
                                                                                                                             ,'trash'   => 'Inactive' ) ) );
     $data['fields'][]           = $pac_ui->generate_form_table_line( 'Members', 'CHECKBOX_WELL', array( 'name'     => 'post_content'
                                                                                                        ,'options'  => $pac['users'] ) );
-        
+
     //call the view
-    include_once plugin_dir_path( __FILE__ ) . 'views/group-edit.php';
-    
+    include_once plugin_dir_path( __FILE__ ) . 'views/group_post_type/edit.php';
+
 }
 
-function postaccesscontroller_process(){    
+function postaccesscontroller_process(){
 
     require_once plugin_dir_path( __FILE__ ) . 'classes/db.php';
 
     $pac_db                     = new postaccesscontroller_db();
-    
+
     $form_result_data           = $pac_db->pac_group_form_process( $_POST );
-    
+
     if( array_key_exists( 'error', $form_result_data) ):
         echo '<div id="message" class="error"><p>'.$form_result_data['error'].'</p></div>';
     else:
@@ -195,17 +198,17 @@ function postaccesscontroller_process(){
         <a href="<?php get_bloginfo('wpurl'); ?>/wp-admin/users.php?page=post-access-controller--main" class="button button-large button-primary">Back to Group Listing</a>
     </div>
     <?php
-        
+
 }
 
-function postaccesscontroller_archive(){    
+function postaccesscontroller_archive(){
 
     require_once plugin_dir_path( __FILE__ ) . 'classes/db.php';
 
     $pac_db                     = new postaccesscontroller_db();
-    
+
     $form_result_data           = $pac_db->pac_group_archive_process( $_GET );
-    
+
     if( array_key_exists( 'error', $form_result_data) ):
         echo '<div id="message" class="error"><p>'.$form_result_data['error'].'</p></div>';
     else:
@@ -217,10 +220,12 @@ function postaccesscontroller_archive(){
         <a href="<?php get_bloginfo('wpurl'); ?>/wp-admin/users.php?page=post-access-controller--main" class="button button-large button-primary">Back to Group Listing</a>
     </div>
     <?php
-        
+
 }
 
 function postaccesscontroller_check( $post_obj ){
+
+	//print_r( $post_obj );
 
     require_once plugin_dir_path( __FILE__ ) . 'classes/db.php';
     $pac_db                     = new postaccesscontroller_db();
@@ -230,27 +235,43 @@ function postaccesscontroller_check( $post_obj ){
         $post_obj->post_title   = 'Access Denied';
         $post_obj->post_status  = 'private';
         $post_obj->post_type    = 'noaccess';
+
+        //change the post object to show the message the user setup
         if( $msg_type == 'std' ):
             $post_obj->post_content = get_option('access_denied_message');
+        	$post_obj->post_excerpt = get_option('access_denied_message');
         else:
             $post_obj->post_content = get_post_meta( $post_obj->ID, 'postaccesscontroller_noacs_custom_msg', true);
-        endif; 
+	        $post_obj->post_excerpt = get_post_meta( $post_obj->ID, 'postaccesscontroller_noacs_custom_msg', true);
+	        print_r( $post_obj );
+        endif;
+
+        //COMMENTS handling code
+			// Kill the comments template. This will deal with themes that don't check comment stati properly!
+			add_filter( 'comments_template', postaccesscontroller_comments_template_override, 20 );
+			// Remove comment-reply script for themes that include it indiscriminately
+			wp_deregister_script( 'comment-reply' );
+
     }
+}
+
+function postaccesscontroller_comments_template_override() {
+	return dirname( __FILE__ ) . '/views/comments-template.php';
 }
 
 function postaccesscontroller_meta_boxes( $post_type, $post ) {
 
     //check to see if $post_type is one that is configured to have this done
     $post_types    = get_option('post_types');
-    
-    //add the box   
+
+    //add the box
     if( is_array( $post_types ) && in_array( $post_type, $post_types ) ):
-    
+
         //get the post type object for label, etc.
         $post_type_obj = get_post_type_object( $post_type );
-        
+
         //add the box
-        add_meta_box( 
+        add_meta_box(
             'postaccesscontroller-meta-box',                                //id
             __( $post_type_obj->labels->singular_name . ' Access' ),        //label
             'postaccesscontroller_meta_box',                                //function
@@ -260,7 +281,7 @@ function postaccesscontroller_meta_boxes( $post_type, $post ) {
         );
 
     endif;
-    
+
 }
 
 function postaccesscontroller_meta_box( $post ){
@@ -268,7 +289,7 @@ function postaccesscontroller_meta_box( $post ){
     require_once plugin_dir_path( __FILE__ ) . 'classes/ui.php';
 
     $pac_ui                     = new postaccesscontroller_ui();
-  
+
     $ctrl_type                  = $pac_ui->generate_form_table_line( 'Control Method', 'DROP_DOWN', array( 'current_value' => get_post_meta( $post->ID, 'postaccesscontroller_ctrl_type', true )
                                                                                                     ,'name'          => 'postaccesscontroller_ctrl_type'
                                                                                                     ,'id'            => 'postaccesscontroller_ctrl_type'
@@ -294,14 +315,14 @@ function postaccesscontroller_meta_box( $post ){
     }
 
     $data['postaccesscontroller_noacs_custom_msg'] = get_post_meta( $post->ID, 'postaccesscontroller_noacs_custom_msg', true );
-    
+
     //call the view
-    include_once plugin_dir_path( __FILE__ ) . 'views/meta-box.php';
-    
+    include_once plugin_dir_path( __FILE__ ) . 'views/post_meta/box.php';
+
 }
 
 function postaccesscontroller_meta_options( $data ){
-                                               
+
     require_once plugin_dir_path( __FILE__ ) . 'classes/db.php';
 
     $pac_db                     = new postaccesscontroller_db();
@@ -309,26 +330,26 @@ function postaccesscontroller_meta_options( $data ){
     $data['options']            = $pac_db->meta_options_lkup( $data );
 
     //print_r( $data['options'] );
-    
+
     if( $data['type'] == 'user' ):
-    
+
         $data['list_label']     = 'Select Users';
         $data['label_field']    = 'display_name';
-    
+
     elseif( $data['type'] == 'group' ):
-    
+
         $data['list_label']     = 'Select Groups';
         $data['label_field']    = 'post_title';
-    
+
     endif;
 
     //get the current meta data and put it into an array
-    $data['current']            = get_post_meta( $_POST['post_id'], 'postaccesscontroller_meta_'.$data['type'], true );
-    
-    //call the view
-    require_once plugin_dir_path( __FILE__ ) . 'views/meta-options.php';
+    $data['current']            = get_post_meta( $_POST['post_id'], 'postaccesscontroller_meta_'.$data['type'] );
 
-    //need this so the wp_ajax call returns properly    
+    //call the view
+    require_once plugin_dir_path( __FILE__ ) . 'views/post_meta/options.php';
+
+    //need this so the wp_ajax call returns properly
     die();
 
 }
@@ -346,7 +367,7 @@ function postaccesscontroller_save_postdata( $post_id ) {
       return $post_id;
 
   // If this is an autosave, our form has not been submitted, so we don't want to do anything.
-  if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) 
+  if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
       return $post_id;
 
   // Check the user's permissions.
@@ -354,7 +375,7 @@ function postaccesscontroller_save_postdata( $post_id ) {
 
     if ( ! current_user_can( 'edit_page', $post_id ) )
         return $post_id;
-  
+
   } else {
 
     if ( ! current_user_can( 'edit_post', $post_id ) )
@@ -369,12 +390,23 @@ function postaccesscontroller_save_postdata( $post_id ) {
 
   // Update the meta field in the database.
   update_post_meta( $post_id, 'postaccesscontroller_ctrl_type', $pac_ctrl_type );
-  update_post_meta( $post_id, 'postaccesscontroller_meta_user', $_POST['postaccesscontroller_meta_user'] );
-  update_post_meta( $post_id, 'postaccesscontroller_meta_group', $_POST['postaccesscontroller_meta_group'] );
+
+	//we want multiple records for the meta user so we delete all of them and re-write the currently indicated ones
+  	delete_post_meta( $post_id, 'postaccesscontroller_meta_user' );
+	foreach( $_POST['postaccesscontroller_meta_user'] as $pac_meta_user ):
+		add_post_meta( $post_id, 'postaccesscontroller_meta_user', $pac_meta_user );
+	endforeach;
+
+	//and we want multiple records for the groups so we delete all of them and re-write the currently indicated ones
+  	delete_post_meta( $post_id, 'postaccesscontroller_meta_group' );
+	foreach( $_POST['postaccesscontroller_meta_group'] as $pac_meta_group ):
+		add_post_meta( $post_id, 'postaccesscontroller_meta_group', $pac_meta_group );
+	endforeach;
+
   update_post_meta( $post_id, 'postaccesscontroller_noacs_msg_type', $_POST['postaccesscontroller_noacs_msg_type'] );
   update_post_meta( $post_id, 'postaccesscontroller_noacs_custom_msg', $postaccesscontroller_noacs_custom_msg );
-  
-  
+
+
 }
 
 function postaccesscontroller_options(){
@@ -419,42 +451,47 @@ function postaccesscontroller_options(){
                                                                                                                                ,'core'      => 'Core'
                                                                                                                                ,'default'   => 'Default'
                                                                                                                                ,'low'       => 'Low') ) );
-                               
+
+    $post_maint['fields'][]     = $pac_ui->generate_form_table_line( 'Visibility', 'DROP_DOWN', array( 'current_value' => get_option('enable_post_visibility')
+                                                                                                      ,'name'          => 'enable_post_visibility'
+                                                                                                      ,'values'        => array('hidden'     => 'Disable'
+                                                                                                                               ,'visible'    => 'Enable') ) );
+
     //external files
-    wp_enqueue_style( 'pca-styles', plugins_url().'/post-access-controller/admin-general.css' );
+    wp_enqueue_style( 'pca-styles', plugins_url().'/post-access-controller/css/admin-general.css' );
 
     //call the view
-    require_once plugin_dir_path( __FILE__ ) . 'views/options.php';
+    require_once plugin_dir_path( __FILE__ ) . 'views/settings.php';
 
 }
 
 function postaccesscontroller_user_settings(){
 
     //external files
-    wp_enqueue_style( 'pca-styles', plugins_url().'/post-access-controller/admin-general.css' );
+    wp_enqueue_style( 'pca-styles', plugins_url().'/post-access-controller/css/admin-general.css' );
 
     require_once plugin_dir_path( __FILE__ ) . 'classes/db.php';
     require_once plugin_dir_path( __FILE__ ) . 'classes/ui.php';
 
     $pac_db                     = new postaccesscontroller_db();
     $pac_ui                     = new postaccesscontroller_ui();
-    
+
     if( $_GET['user_id'] ):
         $user_id = $_GET['user_id'];
     else:
         $user_id = get_current_user_id();
     endif;
-    $data['groups']             = $pac_db->user_groups_lkup(array( 'user_id' => $user_id ) );   
+    $data['groups']             = $pac_db->user_groups_lkup(array( 'user_id' => $user_id ) );
 
     $data['group_well']         = $pac_ui->generate_checkbox_well( array( 'name' => 'post_id'
                                                                          ,'options' => $data['groups'] ) );
-   
+
     //call the view
     require_once plugin_dir_path( __FILE__ ) . 'views/user-profile.php';
-} 
+}
 
 function postaccesscontroller_save_user_settings( $user_id ){
-    
+
     if ( !current_user_can( 'edit_user', $user_id ) )
         return FALSE;
 
@@ -470,8 +507,92 @@ function postaccesscontroller_admin_scripts( $hook ) {
     global $post;
 
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
-        wp_enqueue_style(  'postaccesscontroller-admin-general', plugins_url().'/post-access-controller/admin-general.css' );
-        wp_enqueue_script( 'postaccesscontroller-meta-box-script', plugins_url().'/post-access-controller/meta-box.js' );
+        wp_enqueue_style(  'postaccesscontroller-admin-general', plugins_url().'/post-access-controller/css/admin-general.css' );
+        wp_enqueue_script( 'postaccesscontroller-meta-box-script', plugins_url().'/post-access-controller/js/meta-box.js' );
     }
-    
+
+}
+
+function postaccesscontroller_posts_join( $clause='' ) {
+    global $wpdb;
+
+    // We join the postmeta table so we can check the value in the WHERE clause.
+    $clause .= " LEFT JOIN $wpdb->postmeta AS postaccesscontroller_ctrl_type ON ($wpdb->posts.ID = postaccesscontroller_ctrl_type.post_id AND postaccesscontroller_ctrl_type.meta_key = 'postaccesscontroller_ctrl_type') ";
+
+    return $clause;
+}
+
+function postaccesscontroller_posts_where( $clause = '' ) {
+    global $wpdb;
+
+    if( ( is_admin() && appthemes_check_user_role( 'administrator' ) ) || is_single() ){
+
+    	$clause .= '';
+
+    	return $clause;
+
+    }else{
+
+	    // prep
+	    $clause .= " AND ( ";
+
+	    //then we'll do each "way" that users could have access to this and wrap each in their own parentheses
+
+	    /*********************************************************
+            NO PAC SET
+	     ********************************************************/
+			$clause .= "( postaccesscontroller_ctrl_type.meta_value = 'none' )";
+
+	    /*********************************************************
+            PUBLIC / NONE
+	     ********************************************************/
+			$clause .= " or ";
+			$clause .= "( postaccesscontroller_ctrl_type.meta_value is null )";
+
+	    /*********************************************************
+            USER
+	     ********************************************************/
+		    $clause .= " or ";
+
+		    //put this in a subquery for clarity of what we're doing
+		    //this gets all the meta_values (ie user_ids) from each post's metadata
+		    $user_subquery = "select meta_value from $wpdb->postmeta where post_id = $wpdb->posts.ID and meta_key = 'postaccesscontroller_meta_user'";
+
+		    //and then if the current post access control type is set to 'user' we check that query for the current user's ID
+			$clause .= "( postaccesscontroller_ctrl_type.meta_value = 'user' and ".get_current_user_id()." in ($user_subquery) )";
+
+	    /*********************************************************
+            GROUP
+	     ********************************************************/
+		    $clause .= " or ";
+
+		    //build this piece by piece so it's more understandable what we're doing
+		    //we'll start with getting just the query for all postmeta records for the current post that will tell us what "group" posts to get
+		    $group_query = "select meta_value from $wpdb->postmeta where post_id = $wpdb->posts.ID and meta_key = 'postaccesscontroller_meta_group'";
+
+		    //so then we need to get all the "user" meta values from the sum of all of those groups
+		    $group_query = "select meta_value from $wpdb->postmeta where post_id in ($group_query) and meta_key = 'postaccesscontroller_group_user'";
+
+		   	//and finally we can use that query to be the inner query here where we need to compare the current user ID to a list of "allowed" IDs
+			$clause .= "( postaccesscontroller_ctrl_type.meta_value = 'group' and ".get_current_user_id()." in ($group_query))";
+
+	    //close
+	    $clause .= " ) ";
+
+    }
+
+    return $clause;
+}
+
+function appthemes_check_user_role( $role, $user_id = null ) {
+
+    if ( is_numeric( $user_id ) )
+	$user = get_userdata( $user_id );
+    else
+        $user = wp_get_current_user();
+
+    if ( empty( $user ) )
+	return false;
+
+    return in_array( $role, (array) $user->roles );
 }
