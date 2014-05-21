@@ -243,7 +243,7 @@ function postaccesscontroller_check( $post_obj ){
         else:
             $post_obj->post_content = get_post_meta( $post_obj->ID, 'postaccesscontroller_noacs_custom_msg', true);
 	        $post_obj->post_excerpt = get_post_meta( $post_obj->ID, 'postaccesscontroller_noacs_custom_msg', true);
-	        print_r( $post_obj );
+	        //print_r( $post_obj );
         endif;
 
         //COMMENTS handling code
