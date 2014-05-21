@@ -1,109 +1,124 @@
-jQuery(document).ready(function(){
+var postAccessControllerPostMeta = {
 
-	urlVars = getUrlVars();
+    init: function(){
+        this.urlVars = this.getUrlVars();
+        this.bindUIFunctions();
+        this.pac_meta_box_show_details(this.urlVars.post);
+        if( jQuery('#postaccesscontroller-meta-box .form-table').hasClass('post-visibility--visible') ){
+            jQuery('#visibility').css({'display':'block'});
+        }
+    },
 
-	var $ = jQuery;
+    bindUIFunctions: function(){
+        var that = this;
+        jQuery('body')
+            .on('change','#postaccesscontroller_ctrl_type',function(){
+                that.pacTypeChange();
+            })
+            .on('change','#postaccesscontroller_noacs_msg_type', function(){
+                that.pacMsgTypeChange();
+            })
+            .on('click','.postaccesscontroller-details .height-toggle',function(){
+                that.pacDtlHeightToggle(jQuery(this));
+            })
+            .on('submit','#post',function(){
+                that.postSave();
+                return false;
+            })
+    },
 
-	if( $('#postaccesscontroller-meta-box .form-table').hasClass('post-visibility--visible') ){
-		$('#visibility').css({'display':'block'});
-	}
+    pacTypeChange: function(){
+        var dtls = jQuery('.postaccesscontroller-details');
+        dtls.removeClass('hide').html('<img src="'+dtls.data('spinner-src')+'">');
+        this.pac_meta_box_show_details(this.urlVars.post);
+    },
 
-	pac_meta_box_show_details(urlVars.post);
+    pacMsgTypeChange: function(){
+        var dtls = jQuery('.postaccesscontroller-noacs_msg');
+        dtls.removeClass('hide').html('<img src="'+dtls.data('spinner-src')+'">');
+        this.pac_meta_box_show_msg(this.urlVars.post);
+    },
 
-	$('body').on('change','#postaccesscontroller_ctrl_type', function(){
-
-		$dtls = $('.postaccesscontroller-details');
-		$dtls.removeClass('hide').html('<img src="'+$dtls.data('spinner-src')+'">');
-		pac_meta_box_show_details(urlVars.post);
-
-	});
-
-	$('body').on('change','#postaccesscontroller_noacs_msg_type', function(){
-
-		$dtls = $('.postaccesscontroller-noacs_msg');
-		$dtls.removeClass('hide').html('<img src="'+$dtls.data('spinner-src')+'">');
-		pac_meta_box_show_msg(urlVars.post);
-
-	});
-
-	$('body').on('click','.postaccesscontroller-details .height-toggle',function(){
-
-		var toggle = $(this),
-            pac_dtls = toggle.closest('.postaccesscontroller-checkbox-well'),
+    pacDtlHeightToggle: function(toggleObj){
+        var pac_dtls = toggleObj.closest('.postaccesscontroller-details').find('.postaccesscontroller-checkbox-well'),
             crnt_height = pac_dtls.attr('data-height');
 
-		if( crnt_height == 'standard' ){
-			pac_dtls.removeClass('height-standard').addClass('height-tall').attr('data-height','tall');
-			toggle.text('Show Less');
-		}else{
-			pac_dtls.removeClass('height-tall').addClass('height-standard').attr('data-height','standard');
-			toggle.text('Show More');
-		}
+        if( crnt_height == 'standard' ){
+            pac_dtls.removeClass('height-standard').addClass('height-tall').attr('data-height','tall');
+            toggleObj.text('Show Less');
+        }else{
+            pac_dtls.removeClass('height-tall').addClass('height-standard').attr('data-height','standard');
+            toggleObj.text('Show More');
+        }
+    },
 
-	});
+    pac_meta_box_show_details: function( postId ){
 
-});
+        var type = jQuery('#postaccesscontroller_ctrl_type').val();
 
-function pac_meta_box_show_details( postId ){
+        if( type == 'user' || type == 'group' ){
 
-	var $ = jQuery;
-	var type = $('#postaccesscontroller_ctrl_type').val();
+            var data    = {'post_id' : postId};
 
-	if( type == 'user' || type == 'group' ){
+            if( type == 'user' ){
+                data.action = 'post-access-controller--meta-user';
+            }else if( type == 'group' ){
+                data.action = 'post-access-controller--meta-group';
+            }
 
-		var data    = {'post_id' : postId};
+            jQuery.post(ajaxurl, data, function(response) {
+                jQuery('.postaccesscontroller-details').html( response );
+            });
 
-		if( type == 'user' ){
-			data.action = 'post-access-controller--meta-user';
-		}else if( type == 'group' ){
-			data.action = 'post-access-controller--meta-group';
-		}
+        }else{
 
-		$.post(ajaxurl, data, function(response) {
-			$('.postaccesscontroller-details').html( response );
-		});
+            jQuery('.postaccesscontroller-details').addClass('hide');
 
-	}else{
+        }
 
-		$('.postaccesscontroller-details').addClass('hide');
+    },
 
-	}
+    pac_meta_box_show_msg: function( postId ){
 
-}
+        var type = jQuery('#postaccesscontroller_noacs_msg_type').val();
 
-function pac_meta_box_show_msg( postId ){
+        if( type == 'none' ){
 
-	var $ = jQuery;
-	var type = $('#postaccesscontroller_noacs_msg_type').val();
+            jQuery('.postaccesscontroller-noacs-std-msg').addClass('hide');
+            jQuery('.postaccesscontroller-noacs-custom-msg').addClass('hide');
 
-	if( type == 'none' ){
+        }else if( type == 'std' ){
 
-		$('.postaccesscontroller-noacs-std-msg').addClass('hide');
-		$('.postaccesscontroller-noacs-custom-msg').addClass('hide');
+            jQuery('.postaccesscontroller-noacs-std-msg').removeClass('hide');
+            jQuery('.postaccesscontroller-noacs-custom-msg').addClass('hide');
 
-	}else if( type == 'std' ){
+        }else if( type == 'custom' ){
 
-		$('.postaccesscontroller-noacs-std-msg').removeClass('hide');
-		$('.postaccesscontroller-noacs-custom-msg').addClass('hide');
+            jQuery('.postaccesscontroller-noacs-std-msg').addClass('hide');
+            jQuery('.postaccesscontroller-noacs-custom-msg').removeClass('hide');
 
-	}else if( type == 'custom' ){
+        }
 
-		$('.postaccesscontroller-noacs-std-msg').addClass('hide');
-		$('.postaccesscontroller-noacs-custom-msg').removeClass('hide');
+    },
 
-	}
+    postSave: function(){
+        console.log('test');
+    },
 
-}
-
-
-function getUrlVars(){
-    var vars = [], hash;
-    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
-    for(var i = 0; i < hashes.length; i++)
-    {
-        hash = hashes[i].split('=');
-        vars.push(hash[0]);
-        vars[hash[0]] = hash[1];
+    getUrlVars: function(){
+        var vars = [], hash;
+        var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+        for(var i = 0; i < hashes.length; i++)
+        {
+            hash = hashes[i].split('=');
+            vars.push(hash[0]);
+            vars[hash[0]] = hash[1];
+        }
+        return vars;
     }
-    return vars;
-}
+
+};
+
+jQuery(document).ready(function(){
+    postAccessControllerPostMeta.init();
+});

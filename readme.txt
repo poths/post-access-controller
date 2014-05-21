@@ -3,7 +3,7 @@ Contributors: arsdehnel
 Donate link: http://arsdehnel.net/plugin/post-access-controller/
 Tags: security, visibility, post access, access control
 Requires at least: 3.0.1
-Tested up to: 3.9.0
+Tested up to: 3.9.1
 Stable tag: "trunk"
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -60,6 +60,9 @@ The short answer: moderately secure.  For 98% of users they would have no way of
 5. On the post maintenance page with the settings making the post access control box on the right side and high priority.
 
 == Changelog ==
+
+= 0.9.2 =
+* Adjusted what is displayed to users that don't have access to a page that get to the URL representing that page.  It was showing a 404 because WordPress said there was nothing on that page for them but now it will show the Access Denied header and the indicated No Access message.
 
 = 0.9.1 =
 * Added interim option to allow the WP Core post visibility option if enabled in the Post Access Controller settings page

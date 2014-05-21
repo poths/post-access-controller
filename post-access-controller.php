@@ -3,7 +3,7 @@
  * Plugin Name: Post Access Controller
  * Plugin URI:  http://arsdehnel.net/plugin/post-access-controller/
  * Description: Allow control of access to individual posts by setting individual users or user groups to have access
- * Version:     0.9.1
+ * Version:     0.9.2
  * Author:      Adam Dehnel
  * Author URI:  http://arsdehnel.net/
  * License:     GPLv2 or later
@@ -120,7 +120,7 @@ function postaccesscontroller_init(){
 
     $data['list_table']         = $pac_list_table;
 
-    require_once plugin_dir_path( __FILE__ ) . 'views/groups-list.php';
+    require_once plugin_dir_path( __FILE__ ) . 'views/group_post_type/list.php';
 
     die();
 
@@ -140,7 +140,7 @@ function postaccesscontroller_edit_group(){
     $pac['header_text']         = '<h2>Post Access Controller: Edit Group</h2>';
 
     //external files
-    wp_enqueue_style( 'pca-styles', plugins_url().'/post-access-controller/admin-general.css' );
+    wp_enqueue_style( 'pca-styles', plugins_url().'/post-access-controller/css/admin-general.css' );
 
     if( $_GET['post_id'] ):
         $post_id = $_GET['post_id'];
@@ -175,7 +175,7 @@ function postaccesscontroller_edit_group(){
                                                                                                        ,'options'  => $pac['users'] ) );
 
     //call the view
-    include_once plugin_dir_path( __FILE__ ) . 'views/group-edit.php';
+    include_once plugin_dir_path( __FILE__ ) . 'views/group_post_type/edit.php';
 
 }
 
@@ -236,14 +236,27 @@ function postaccesscontroller_check( $post_obj ){
         $post_obj->post_status  = 'private';
         $post_obj->post_type    = 'noaccess';
 
-        echo $msg_type;
+        //change the post object to show the message the user setup
         if( $msg_type == 'std' ):
             $post_obj->post_content = get_option('access_denied_message');
         	$post_obj->post_excerpt = get_option('access_denied_message');
         else:
             $post_obj->post_content = get_post_meta( $post_obj->ID, 'postaccesscontroller_noacs_custom_msg', true);
+	        $post_obj->post_excerpt = get_post_meta( $post_obj->ID, 'postaccesscontroller_noacs_custom_msg', true);
+	        print_r( $post_obj );
         endif;
+
+        //COMMENTS handling code
+			// Kill the comments template. This will deal with themes that don't check comment stati properly!
+			add_filter( 'comments_template', postaccesscontroller_comments_template_override, 20 );
+			// Remove comment-reply script for themes that include it indiscriminately
+			wp_deregister_script( 'comment-reply' );
+
     }
+}
+
+function postaccesscontroller_comments_template_override() {
+	return dirname( __FILE__ ) . '/views/comments-template.php';
 }
 
 function postaccesscontroller_meta_boxes( $post_type, $post ) {
@@ -304,7 +317,7 @@ function postaccesscontroller_meta_box( $post ){
     $data['postaccesscontroller_noacs_custom_msg'] = get_post_meta( $post->ID, 'postaccesscontroller_noacs_custom_msg', true );
 
     //call the view
-    include_once plugin_dir_path( __FILE__ ) . 'views/meta-box.php';
+    include_once plugin_dir_path( __FILE__ ) . 'views/post_meta/box.php';
 
 }
 
@@ -334,7 +347,7 @@ function postaccesscontroller_meta_options( $data ){
     $data['current']            = get_post_meta( $_POST['post_id'], 'postaccesscontroller_meta_'.$data['type'] );
 
     //call the view
-    require_once plugin_dir_path( __FILE__ ) . 'views/meta-options.php';
+    require_once plugin_dir_path( __FILE__ ) . 'views/post_meta/options.php';
 
     //need this so the wp_ajax call returns properly
     die();
@@ -445,17 +458,17 @@ function postaccesscontroller_options(){
                                                                                                                                ,'visible'    => 'Enable') ) );
 
     //external files
-    wp_enqueue_style( 'pca-styles', plugins_url().'/post-access-controller/admin-general.css' );
+    wp_enqueue_style( 'pca-styles', plugins_url().'/post-access-controller/css/admin-general.css' );
 
     //call the view
-    require_once plugin_dir_path( __FILE__ ) . 'views/options.php';
+    require_once plugin_dir_path( __FILE__ ) . 'views/settings.php';
 
 }
 
 function postaccesscontroller_user_settings(){
 
     //external files
-    wp_enqueue_style( 'pca-styles', plugins_url().'/post-access-controller/admin-general.css' );
+    wp_enqueue_style( 'pca-styles', plugins_url().'/post-access-controller/css/admin-general.css' );
 
     require_once plugin_dir_path( __FILE__ ) . 'classes/db.php';
     require_once plugin_dir_path( __FILE__ ) . 'classes/ui.php';
@@ -494,8 +507,8 @@ function postaccesscontroller_admin_scripts( $hook ) {
     global $post;
 
     if ( $hook == 'post-new.php' || $hook == 'post.php' ) {
-        wp_enqueue_style(  'postaccesscontroller-admin-general', plugins_url().'/post-access-controller/admin-general.css' );
-        wp_enqueue_script( 'postaccesscontroller-meta-box-script', plugins_url().'/post-access-controller/meta-box.js' );
+        wp_enqueue_style(  'postaccesscontroller-admin-general', plugins_url().'/post-access-controller/css/admin-general.css' );
+        wp_enqueue_script( 'postaccesscontroller-meta-box-script', plugins_url().'/post-access-controller/js/meta-box.js' );
     }
 
 }
@@ -512,7 +525,7 @@ function postaccesscontroller_posts_join( $clause='' ) {
 function postaccesscontroller_posts_where( $clause = '' ) {
     global $wpdb;
 
-    if( is_admin() && appthemes_check_user_role( 'administrator' ) ){
+    if( ( is_admin() && appthemes_check_user_role( 'administrator' ) ) || is_single() ){
 
     	$clause .= '';
 
