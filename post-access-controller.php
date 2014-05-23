@@ -421,7 +421,7 @@ function postaccesscontroller_options(){
     $post_types                 = get_post_types( array( 'public' => true ), 'object' );
 
     foreach( $post_types as $post_type => $post_type_obj ):
-        if( in_array( $post_type, get_option('post_types') ) ):
+        if( in_array( $post_type, ( is_array( get_option('post_types') ) ? get_option('post_types') : array() ) ) ):
             $selected = 'Y';
         else:
             $selected = 'N';
