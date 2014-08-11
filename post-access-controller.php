@@ -479,6 +479,9 @@ function postaccesscontroller_options(){
 
 function postaccesscontroller_user_settings(){
 
+    if ( !postaccesscontroller_current_user_may_change_group() )
+        return FALSE;
+
     //external files
     wp_enqueue_style( 'pca-styles', plugins_url().'/post-access-controller/css/admin-general.css' );
 
@@ -504,7 +507,7 @@ function postaccesscontroller_user_settings(){
 
 function postaccesscontroller_save_user_settings( $user_id ){
 
-    if ( !current_user_can( 'edit_user', $user_id ) )
+    if ( !postaccesscontroller_current_user_may_change_group() )
         return FALSE;
 
     require_once plugin_dir_path( __FILE__ ) . 'classes/db.php';
@@ -512,6 +515,13 @@ function postaccesscontroller_save_user_settings( $user_id ){
 
     $form_result_data           = $pac_db->pac_user_form_process( $_POST );
 
+}
+
+// normal users are not allowed to assign themselves to new groups
+function postaccesscontroller_current_user_may_change_group($user_id) {
+	return current_user_can( 'edit_user', $user_id ) && current_user_can('level_10');
+	// http://codex.wordpress.org/Function_Reference/current_user_can
+	// alternatively maybe use capability 'promote_users'
 }
 
 function postaccesscontroller_admin_scripts( $hook ) {
