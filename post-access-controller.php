@@ -30,7 +30,19 @@ add_action( 'edit_user_profile_update'                  , 'postaccesscontroller_
 add_action( 'init'                                      , 'postaccesscontroller_create_posttypes' );
 add_filter( 'posts_join'                                , 'postaccesscontroller_posts_join' );
 add_filter( 'posts_where'                               , 'postaccesscontroller_posts_where' );
+add_filter( 'the_content'                               , 'postaccesscontroller_filter' );
 
+
+function postaccesscontroller_filter($content) {
+    require_once plugin_dir_path( __FILE__ ) . 'classes/db.php';
+    $pac_db                     = new postaccesscontroller_db();
+    
+    if( !$pac_db->post_access_allow_check( get_post() ) ){
+        return "restricted";
+    } else {
+        return $content;
+    }
+}
 
 function admin_menu_setup() {
     add_users_page( 'User Group Maintenance', 'User Groups', 'create_users', 'post-access-controller--main', 'postaccesscontroller_init');
